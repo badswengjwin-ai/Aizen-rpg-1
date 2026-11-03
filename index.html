@@ -328,7 +328,26 @@ document.getElementById('bd').addEventListener('pointerdown',e=>{e.preventDefaul
 document.getElementById('ba').addEventListener('pointerdown',e=>{e.preventDefault();atk=true});
 addEventListener('keydown',e=>{if(e.key=='x'||e.key=='j')atk=true;if(e.key=='c')skf=true;if(e.key=='v'||e.key=='Shift')dsh=true});
 
-Promise.all(IMGS.map(load).concat(loadSprites(),[load(NPCI_SRC).then(i=>{NPCI=i;return i})])).then(r=>{imgs=r.slice(0,IMGS.length);place(0,.1);requestAnimationFrame(loop)});
+/* ===== 자동 저장 (브라우저 localStorage) ===== */
+const SAVE_KEY='sidescroll_rpg_save_v1';let saveReady=false;
+function saveGame(){if(!saveReady)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,wp:pl.wp,own:pl.own,cls:pl.cls,gold:pl.gold,hpP:pl.hpP,mpP:pl.mpP,wu:pl.wu,lv:pl.lv,xp:pl.xp,map:cur,x:W?px/W:.1}))}catch(e){}}
+function loadSave(){let d=null;try{d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){}
+ if(d&&d.v===1){const n=(v,lo,hi,df)=>Number.isFinite(v)?Math.min(hi,Math.max(lo,v)):df;
+  pl.lv=Math.floor(n(d.lv,1,9999,1));pl.xp=n(d.xp,0,1e9,0);pl.gold=n(d.gold,0,1e12,0);pl.hpP=Math.floor(n(d.hpP,0,9999,0));pl.mpP=Math.floor(n(d.mpP,0,9999,0));pl.wu=Math.floor(n(d.wu,0,20,0));
+  pl.own={0:1};if(d.own&&typeof d.own==='object')for(const k in d.own){const i=+k;if(WP[i]&&d.own[k])pl.own[i]=1}
+  pl.wp=(Number.isInteger(d.wp)&&WP[d.wp]&&pl.own[d.wp])?d.wp:0;
+  pl.cls=(Number.isInteger(d.cls)&&d.cls>=0&&d.cls<JOBS.length)?d.cls:-1;
+  recalc();if(pl.cls>=0)buildSk();pl.hp=pl.mhp;pl.mp=pl.mmp;
+  place((Number.isInteger(d.map)&&M[d.map])?d.map:0,n(d.x,.03,.97,.1))}
+ saveReady=true}
+setInterval(saveGame,2000);
+addEventListener('pagehide',saveGame);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
+{const b=document.createElement('button');b.textContent='🗑';b.setAttribute('aria-label','저장 데이터 삭제');
+ Object.assign(b.style,{position:'fixed',top:'calc(8px + env(safe-area-inset-top,0px))',right:'56px',zIndex:120,width:'40px',height:'40px',borderRadius:'50%',border:'2px solid #5a4c80',background:'#241d35cc',color:'#f1ead8',fontSize:'18px',padding:'0',touchAction:'manipulation'});
+ b.onclick=()=>{if(confirm('저장 데이터를 삭제하고 처음부터 시작할까요?')){saveReady=false;try{localStorage.removeItem(SAVE_KEY)}catch(e){}location.reload()}};
+ document.body.appendChild(b)}
+Promise.all(IMGS.map(load).concat(loadSprites(),[load(NPCI_SRC).then(i=>{NPCI=i;return i})])).then(r=>{imgs=r.slice(0,IMGS.length);place(0,.1);try{loadSave()}catch(e){saveReady=true}requestAnimationFrame(loop)});
 </script>
 <script>
 /* 신나는 BGM (Web Audio 합성 · 외부 파일 없음) */
