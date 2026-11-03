@@ -329,4 +329,85 @@ document.getElementById('ba').addEventListener('pointerdown',e=>{e.preventDefaul
 addEventListener('keydown',e=>{if(e.key=='x'||e.key=='j')atk=true;if(e.key=='c')skf=true;if(e.key=='v'||e.key=='Shift')dsh=true});
 
 Promise.all(IMGS.map(load).concat(loadSprites(),[load(NPCI_SRC).then(i=>{NPCI=i;return i})])).then(r=>{imgs=r.slice(0,IMGS.length);place(0,.1);requestAnimationFrame(loop)});
-</script></body></html>
+</script>
+<script>
+/* 신나는 BGM (Web Audio 합성 · 외부 파일 없음) */
+(()=>{
+const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+let ac,master,noiseBuf,started=false,step=0,nextT=0,curTheme='',th=null,on=true;
+try{if(localStorage.getItem('bgm')==='off')on=false}catch(e){}
+const mf=n=>440*Math.pow(2,(n-69)/12);
+/* ch: [화음 루트(MIDI), 단조여부] 4마디 반복 */
+const TH={
+ A:{bpm:138,ch:[[48,0],[55,0],[57,1],[53,0]],lead:'square',bass:'sawtooth',h16:0},
+ B:{bpm:148,ch:[[57,1],[53,0],[48,0],[55,0]],lead:'square',bass:'sawtooth',h16:1},
+ C:{bpm:130,ch:[[50,1],[46,0],[48,0],[45,0]],lead:'triangle',bass:'sawtooth',h16:0},
+ D:{bpm:160,ch:[[52,1],[48,0],[55,0],[50,0]],lead:'sawtooth',bass:'sawtooth',h16:1},
+ E:{bpm:174,ch:[[52,1],[48,0],[55,0],[50,0]],lead:'sawtooth',bass:'sawtooth',h16:1}
+};
+const MAPT=['A','A','B','B','C','B','D','D','E'];
+const LP=[[3,-1,2,-1,1,-1,2,-1,4,-1,3,2,1,-1,2,-1],
+          [4,-1,3,-1,2,-1,3,-1,5,-1,4,3,2,-1,3,-1],
+          [3,3,-1,4,5,-1,4,-1,3,-1,2,-1,1,2,3,-1]];
+const LB=[0,1,0,2],AR=[0,1,2,3,2,1,2,3];
+function init(){
+ ac=new AC();master=ac.createGain();master.gain.value=on?.32:0;
+ const comp=ac.createDynamicsCompressor();master.connect(comp);comp.connect(ac.destination);
+ const len=ac.sampleRate;noiseBuf=ac.createBuffer(1,len,ac.sampleRate);
+ const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+}
+function tone(type,f,t,dur,vol,lp){
+ const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;o.connect(g);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ if(lp){const fl=ac.createBiquadFilter();fl.type='lowpass';fl.frequency.value=lp;g.connect(fl);fl.connect(master)}else g.connect(master);
+ o.start(t);o.stop(t+dur+.02);
+}
+function kick(t){const o=ac.createOscillator(),g=ac.createGain();
+ o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);
+ g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);
+ o.connect(g);g.connect(master);o.start(t);o.stop(t+.25)}
+function noise(t,dur,vol,hp){const s=ac.createBufferSource();s.buffer=noiseBuf;
+ const f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=hp;
+ const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+ s.connect(f);f.connect(g);g.connect(master);s.start(t,Math.random()*.5);s.stop(t+dur+.02)}
+const snare=t=>{noise(t,.14,.5,1500);tone('triangle',190,t,.08,.25)};
+const hat=(t,v)=>noise(t,.04,v,7500);
+function sched(s,t){
+ const bar=(s>>4)&3,i=s&15,c=th.ch[bar],r=c[0],t3=c[1]?3:4,sd=60/th.bpm/4;
+ if(i%4===0)kick(t);
+ if(i===4||i===12)snare(t);
+ if(bar===3&&i>=14)snare(t);
+ if(i%2===0)hat(t,i%4===2?.28:.14);else if(th.h16)hat(t,.08);
+ if(i%2===0){const n=r-12+(i%8===6?7:(i%4===2?12:0));tone(th.bass,mf(n),t,sd*1.7,.3,700)}
+ const ct=[0,t3,7,12];
+ tone('square',mf(r+12+ct[AR[i&7]]),t,sd*.9,.05,2600);
+ const idx=LP[LB[bar]][i];
+ if(idx>=0){const tn=[0,t3,7,12,12+t3,19];let n=r+12+tn[idx];while(n>81)n-=12;
+  tone(th.lead,mf(n),t,sd*1.8,.15,5000)}
+}
+function tick(){
+ if(!ac||ac.state!=='running'||!on)return;
+ while(nextT<ac.currentTime+.18){
+  if((step&15)===0){let k='A';try{k=MAPT[cur]||'A'}catch(e){}if(k!==curTheme){curTheme=k;th=TH[k]}}
+  sched(step,nextT);nextT+=60/th.bpm/4;step++;
+ }
+}
+function start(){
+ if(!ac)init();
+ if(ac.state==='suspended')ac.resume();
+ if(!started){started=true;nextT=ac.currentTime+.1;setInterval(tick,40)}
+}
+['pointerdown','touchstart','keydown','click'].forEach(e=>addEventListener(e,start,{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!ac)return;if(document.hidden)ac.suspend();else if(on)ac.resume()});
+const b=document.createElement('button');b.id='bgmBtn';b.textContent=on?'🔊':'🔇';b.setAttribute('aria-label','배경음악 켜기/끄기');
+Object.assign(b.style,{position:'fixed',top:'calc(8px + env(safe-area-inset-top,0px))',right:'8px',zIndex:120,width:'40px',height:'40px',borderRadius:'50%',border:'2px solid #5a4c80',background:'#241d35cc',color:'#f1ead8',fontSize:'18px',padding:'0',touchAction:'manipulation'});
+b.addEventListener('click',()=>{
+ start();on=!on;b.textContent=on?'🔊':'🔇';
+ master.gain.setTargetAtTime(on?.32:0,ac.currentTime,.05);
+ if(on)nextT=Math.max(nextT,ac.currentTime+.05);
+ try{localStorage.setItem('bgm',on?'on':'off')}catch(e){}
+});
+document.body.appendChild(b);
+})();
+</script>
+</body></html>
