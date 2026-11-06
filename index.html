@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="screen-orientation" content="landscape">
 <title>횡스크롤 RPG – 맵 프로토타입</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -61,9 +64,29 @@ canvas{width:100%;max-width:960px;aspect-ratio:16/9;image-rendering:pixelated;ba
 .wc button{width:100%;background:#c9a04a;color:#1a1206;border:0;border-radius:4px;padding:.5cqw;font-size:1.8cqw;font-weight:700}.wc button:disabled{opacity:.45}
  #toast{position:fixed;z-index:99;left:50%;top:18%;transform:translateX(-50%);background:#210b35;border:2px solid #b56cff;color:#fff;padding:14px 20px;border-radius:12px;font-weight:900;box-shadow:0 0 24px #a855f7;text-align:center;max-width:90vw}
 #stage.intro .ab,#stage.intro #joy{visibility:hidden}
+
+/* ===== 가로 모드 전용 레이아웃 ===== */
+html,body{height:100%;overflow:hidden;background:#000;position:fixed;inset:0;width:100%}
+:root{padding:0!important}
+#wrap{position:fixed;inset:0;display:block;container-type:size;background:#0d0b14;gap:0;
+ padding:0 env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px);box-sizing:border-box}
+#stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ width:min(100cqw,calc(100cqh*16/9));max-width:none;height:auto;aspect-ratio:16/9}
+#stage canvas{border:0}
+@media (orientation:portrait) and (pointer:coarse){
+ #wrap{position:fixed;top:0;left:100vw;right:auto;bottom:auto;width:100vh;width:100dvh;height:100vw;
+  transform-origin:0 0;transform:rotate(90deg);padding:0}
+ #sg{touch-action:pan-x!important}
+}
+#hud{position:absolute;left:8px;top:8px;z-index:121;display:flex;gap:6px}
+#hud button{width:40px;height:40px;border-radius:50%;border:2px solid #5a4c80;background:#241d35cc;color:#f1ead8;font-size:17px;padding:0;touch-action:manipulation}
+#nav{position:absolute;left:8px;top:56px;z-index:121;max-width:min(70cqw,520px);justify-content:flex-start;
+ background:rgba(13,11,20,.92);border:1px solid #4a3f66;border-radius:8px;padding:8px}
+#nav[hidden]{display:none}
 </style></head><body>
 <div id="wrap">
-<div id="nav"></div>
+<div id="hud"><button id="menuBtn" aria-label="맵 이동">☰</button><button id="fsBtn" aria-label="전체화면">⛶</button></div>
+<div id="nav" hidden></div>
 <div id="stage"><canvas id="c" width="960" height="540"></canvas>
 <div id="joy"><div id="knob"></div></div>
 <button class="ab" id="ba" style="right:3cqw;bottom:4cqw;width:15cqw;height:15cqw;font-size:7cqw">⚔<b>공격</b></button>
@@ -188,7 +211,7 @@ function demonStart(m,id){
  m.tl.sort((a,b)=>a[0]-b[0])}
 function demonStep(m,dt){
  m.ft+=dt;const gyw=M[cur].g*WH;
- if(m.st==='die'){if(!m.cl){m.cl=1;demonDead=Date.now();dfx=[];dzs=[];shk=.8;const z=document.createElement('div');z.id='toast';z.innerHTML='마왕 처치!<br>세상을 지배하던 절대자가 쓰러졌습니다';document.getElementById('toast')?.remove();document.body.appendChild(z);setTimeout(()=>z.remove(),5000)}if(m.ft>9)m.gone=true;return}
+ if(m.st==='die'){if(!m.cl){m.cl=1;demonDead=Date.now();dfx=[];dzs=[];shk=.8;const z=document.createElement('div');z.id='toast';z.innerHTML='마왕 처치!<br>세상을 지배하던 절대자가 쓰러졌습니다';document.getElementById('toast')?.remove();document.getElementById('wrap').appendChild(z);setTimeout(()=>z.remove(),5000)}if(m.ft>9)m.gone=true;return}
  if(m.ent>0){m.ent-=dt;m.face=1;m.st='idle';if(m.ent<=0){shk=.7;m.ft=0;m.cd=1.2}return}
  const dx=px-m.x,ad=Math.abs(dx),rg=m.hp<m.mhp*.5;m.ult-=dt;
  if(m.st==='atk'||m.st==='cast'){m.t+=dt;
@@ -425,7 +448,7 @@ function gameStep(dt){
   if(ad<450&&ad>(d.ap||d.rng*.8)){m.x+=m.face*d.spd*dt;if(m.st!='move'){m.st='move';m.ft=0}}
   else if(m.st=='move'){m.st='idle';m.ft=0}
   m.x=Math.max(60,Math.min(W-60,m.x))}
- if(cur===8&&!raidDone&&mons.length&&mons.every(m=>m.st==='die'&&m.ft>1.5)){raidPhase++;if(raidPhase===2){let x=Math.max(W*.55,Math.min(W-180,px+420)),h=850000;mons=[{ty:'raidBone',x,sx:x,lv:85,hp:h,mhp:h,st:'idle',ft:0,cd:1,face:-1,ent:4.2}];warn=3.5;shk=1}else if(raidPhase===3){let x=Math.max(W*.55,Math.min(W-180,px+420)),h=1500000;mons=[{ty:'raidKarbon',x,sx:x,lv:90,hp:h,mhp:h,st:'idle',ft:0,cd:1,face:-1,ent:1.8}];warn=2;shk=1}else if(raidPhase>=4){raidDone=true;mons=[];const di=WP.findIndex(w=>w.drop);pl.own[di]=1;pl.wp=di;pl.aown[7]=1;eqAr(7);banner=5;document.getElementById('toast')?.remove();let z=document.createElement('div');z.id='toast';z.innerHTML='<img src="'+WPI[WP.findIndex(w=>w.drop)]+'" style="height:64px;display:block;margin:0 auto 6px;mix-blend-mode:screen">카르본 처치!<br>저주받은 단검 획득 [초월 등급]<br>데미지 15,000<br>카르본의 갑옷 획득 [초월 등급]';document.body.appendChild(z);setTimeout(()=>z.remove(),5000)}}
+ if(cur===8&&!raidDone&&mons.length&&mons.every(m=>m.st==='die'&&m.ft>1.5)){raidPhase++;if(raidPhase===2){let x=Math.max(W*.55,Math.min(W-180,px+420)),h=850000;mons=[{ty:'raidBone',x,sx:x,lv:85,hp:h,mhp:h,st:'idle',ft:0,cd:1,face:-1,ent:4.2}];warn=3.5;shk=1}else if(raidPhase===3){let x=Math.max(W*.55,Math.min(W-180,px+420)),h=1500000;mons=[{ty:'raidKarbon',x,sx:x,lv:90,hp:h,mhp:h,st:'idle',ft:0,cd:1,face:-1,ent:1.8}];warn=2;shk=1}else if(raidPhase>=4){raidDone=true;mons=[];const di=WP.findIndex(w=>w.drop);pl.own[di]=1;pl.wp=di;pl.aown[7]=1;eqAr(7);banner=5;document.getElementById('toast')?.remove();let z=document.createElement('div');z.id='toast';z.innerHTML='<img src="'+WPI[WP.findIndex(w=>w.drop)]+'" style="height:64px;display:block;margin:0 auto 6px;mix-blend-mode:screen">카르본 처치!<br>저주받은 단검 획득 [초월 등급]<br>데미지 15,000<br>카르본의 갑옷 획득 [초월 등급]';document.getElementById('wrap').appendChild(z);setTimeout(()=>z.remove(),5000)}}
  for(const p of projs){p.x+=p.v*dt;p.t+=dt;if(Math.abs(p.x-px)<28&&Math.abs(p.y-(py-30))<50){p.h=1;dmg(3+p.l*2)}}
  projs=projs.filter(p=>!p.h&&p.t<2.2);dfxStep(dt)}
 function drawGame(cx,cy){
@@ -457,7 +480,7 @@ function hud(){const x=46,y=46;ctx.save();ctx.lineWidth=2;
  ctx.fillStyle='#e34';for(const m of mons){if(m.st=='die')continue;const dx=(m.x-px)*.07;if(Math.abs(dx)<33){ctx.beginPath();ctx.arc(cx+dx,cy,3,0,7);ctx.fill()}}
  ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(cx+face*10,cy);ctx.lineTo(cx-face*6,cy-6);ctx.lineTo(cx-face*6,cy+6);ctx.fill();ctx.restore()}
 (function(){const j=document.getElementById('joy'),k=document.getElementById('knob');let id=null;
- function mv(e){const r=j.getBoundingClientRect(),R=r.width/2;let dx=(e.clientX-r.left-R)/R,dy=(e.clientY-r.top-R)/R;const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
+ function mv(e){const r=j.getBoundingClientRect(),R=r.width/2;let dx=(e.clientX-r.left-R)/R,dy=(e.clientY-r.top-R)/R;if(getComputedStyle(document.getElementById('wrap')).transform!=='none'){const sx=dx,sy=dy;dx=sy;dy=-sx}const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
   k.style.transform='translate('+dx*R*.6+'px,'+dy*R*.6+'px)';keys.left=dx<-.3?1:0;keys.right=dx>.3?1:0;keys.jump=dy<-.6?1:0}
  function rs(){id=null;k.style.transform='';keys.left=keys.right=keys.jump=0}
  j.addEventListener('pointerdown',e=>{e.preventDefault();id=e.pointerId;j.setPointerCapture(id);mv(e)});
@@ -486,7 +509,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()}
 {const b=document.createElement('button');b.textContent='🗑';b.setAttribute('aria-label','저장 데이터 삭제');
  Object.assign(b.style,{position:'fixed',top:'calc(8px + env(safe-area-inset-top,0px))',right:'56px',zIndex:120,width:'40px',height:'40px',borderRadius:'50%',border:'2px solid #5a4c80',background:'#241d35cc',color:'#f1ead8',fontSize:'18px',padding:'0',touchAction:'manipulation'});
  b.onclick=()=>{if(confirm('저장 데이터를 삭제하고 처음부터 시작할까요?')){saveReady=false;try{localStorage.removeItem(SAVE_KEY)}catch(e){}location.reload()}};
- document.body.appendChild(b)}
+ document.getElementById('wrap').appendChild(b)}
 Promise.all(IMGS.map(load).concat(loadSprites(),[load(NPCI_SRC).then(i=>{NPCI=i;return i})])).then(r=>{imgs=r.slice(0,IMGS.length);place(0,.1);try{loadSave()}catch(e){saveReady=true}requestAnimationFrame(loop)});
 </script>
 <script>
@@ -566,7 +589,22 @@ b.addEventListener('click',()=>{
  if(on)nextT=Math.max(nextT,ac.currentTime+.05);
  try{localStorage.setItem('bgm',on?'on':'off')}catch(e){}
 });
-document.body.appendChild(b);
+document.getElementById('wrap').appendChild(b);
+})();
+</script>
+
+<script>
+(function(){
+ const de=document.documentElement,fs=document.getElementById('fsBtn'),mb=document.getElementById('menuBtn'),nav=document.getElementById('nav');
+ async function goFull(){
+  try{if(!document.fullscreenElement&&de.requestFullscreen)await de.requestFullscreen({navigationUI:'hide'});else if(!document.fullscreenElement&&de.webkitRequestFullscreen)de.webkitRequestFullscreen()}catch(e){}
+  try{if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape')}catch(e){}
+ }
+ fs.addEventListener('click',()=>{if(document.fullscreenElement){try{document.exitFullscreen();screen.orientation.unlock&&screen.orientation.unlock()}catch(e){}}else goFull()});
+ mb.addEventListener('click',()=>{nav.hidden=!nav.hidden});
+ nav.addEventListener('click',e=>{if(e.target.tagName==='BUTTON')nav.hidden=true});
+ let tried=false;
+ addEventListener('pointerdown',()=>{if(tried)return;tried=true;if(matchMedia('(pointer:coarse)').matches)goFull()},{once:false,passive:true});
 })();
 </script>
 </body></html>
