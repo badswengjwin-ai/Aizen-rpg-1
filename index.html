@@ -83,17 +83,26 @@ html,body{height:100%;overflow:hidden;background:#000;position:fixed;inset:0;wid
 #nav{position:absolute;left:8px;top:56px;z-index:121;max-width:min(70cqw,520px);justify-content:flex-start;
  background:rgba(13,11,20,.92);border:1px solid #4a3f66;border-radius:8px;padding:8px}
 #nav[hidden]{display:none}
+#ci,#ci.go{display:none!important}
+#hud{left:50%!important;top:4px!important;transform:translateX(-50%);opacity:.55}
+#hud button{width:32px;height:32px;font-size:14px}
+#nav{left:50%!important;top:42px!important;transform:translateX(-50%)}
+.ab{font-size:3.1cqw!important}.ab b{font-size:1.25cqw!important}
+#joy{left:3cqw!important;bottom:3cqw!important;width:16cqw!important;height:16cqw!important}
+#knob{width:6.5cqw!important;height:6.5cqw!important;margin:-3.25cqw 0 0 -3.25cqw!important}
+#sk{left:20.5cqw!important;bottom:3cqw!important;grid-template-columns:repeat(4,5.2cqw)!important;gap:.5cqw!important}
+.sb{width:5.2cqw!important;height:4.4cqw!important}.sb i{font-size:1.4cqw!important}
 </style></head><body>
 <div id="wrap">
 <div id="hud"><button id="menuBtn" aria-label="맵 이동">☰</button><button id="fsBtn" aria-label="전체화면">⛶</button></div>
 <div id="nav" hidden></div>
 <div id="stage"><canvas id="c" width="960" height="540"></canvas>
 <div id="joy"><div id="knob"></div></div>
-<button class="ab" id="ba" style="right:3cqw;bottom:4cqw;width:15cqw;height:15cqw;font-size:7cqw">⚔<b>공격</b></button>
-<button class="ab" id="bk" style="right:19.5cqw;bottom:7cqw;width:9.5cqw;height:9.5cqw">✦<b>스킬</b></button>
-<button class="ab" id="bd" style="right:24.5cqw;bottom:18cqw;width:8.5cqw;height:8.5cqw">➤<b>대시</b></button>
-<button class="ab" id="bu" style="right:14cqw;bottom:21cqw;width:9cqw;height:9cqw">◈<b>입장</b></button>
-<button class="ab" id="bj" style="right:4cqw;bottom:21cqw;width:9.5cqw;height:9.5cqw">⤒<b>점프</b></button>
+<button class="ab" id="ba" style="right:2.16cqw;bottom:2.88cqw;width:10.8cqw;height:10.8cqw;font-size:5.04cqw">⚔<b>공격</b></button>
+<button class="ab" id="bk" style="right:14.04cqw;bottom:5.04cqw;width:6.84cqw;height:6.84cqw">✦<b>스킬</b></button>
+<button class="ab" id="bd" style="right:17.64cqw;bottom:12.96cqw;width:6.12cqw;height:6.12cqw">➤<b>대시</b></button>
+<button class="ab" id="bu" style="right:10.08cqw;bottom:15.12cqw;width:6.48cqw;height:6.48cqw">◈<b>입장</b></button>
+<button class="ab" id="bj" style="right:2.88cqw;bottom:15.12cqw;width:6.84cqw;height:6.84cqw">⤒<b>점프</b></button>
 <div id="shop" hidden><div id="sh"><b>무기 상인</b><span id="sgold"></span><button id="sx">✕</button></div><div id="st"><button>소모품·강화</button><button>무기</button><button>갑옷</button></div><div id="sg"></div></div>
 <div id="ci"><img id="cii" alt=""></div>
 <div id="sk" hidden></div>
